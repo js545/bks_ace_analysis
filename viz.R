@@ -16,8 +16,6 @@ write.csv(trial_level_data, file=paste("~/Documents/CMI/bks_ace_analysis/trial_d
 ##############################################################################################################################
 #BRT Analysis
 
-BRT = data$data$BRT
-
 BRT_rt <- function(p_id, hand) {
   
   # p_id of {001, 002, 004, 010, 012, 013}
@@ -88,12 +86,11 @@ BRT_rt <- function(p_id, hand) {
   
 }
 
+# p_id of {001, 002, 004, 010, 012, 013}
 BRT_rt('013', 'Left')
 
 ##############################################################################################################################
 #SAAT Analysis
-
-SAAT = data$data$SAAT
 
 SAAT_RT <- function (p_id, attention) {
   
@@ -140,7 +137,7 @@ SAAT_RT <- function (p_id, attention) {
   pid_SAAT_session2$session <- as.factor(pid_SAAT_session2$session)
   
   dframe = rbind(pid_SAAT_session1, pid_SAAT_session2)
-  
+  dframe <- subset(dframe, Button != 'No Response')
   dframe <- subset(dframe, Condition == attention)
   
   savename = paste("~/Documents/CMI/bks_ace_analysis/results/SAAT_", p_id, "_", attention, ".pdf", sep="")
@@ -172,10 +169,85 @@ SAAT_RT <- function (p_id, attention) {
   
 }
 
-SAAT_RT('013', 'Impulsive')
+# p_id of {001, 002, 004, 010, 012, 013}
+SAAT_RT('013', 'Sustained')
 
 ##############################################################################################################################
 #FLANKER Analysis
+
+FLANKER_RT <- function(p_id, trial) {
+  
+  # p_id of {001, 002, 004, 010, 012, 013}
+  #trial = Congruent, Incongruent
+  
+  FLANKER = data$data$FLANKER
+  
+  p_id_session1 <- paste('ADMIN-UCSF-BK', p_id, sep="")
+  p_id_session2 <- paste('ADMIN-UCSF-BS', p_id, sep="")
+  
+  # Session 1 dataframe
+  pid_FLANKER_session1 = subset(FLANKER, pid == p_id_session1)
+  pid_FLANKER_session1$correct_button <- as.factor(pid_FLANKER_session1$correct_button)
+  pid_FLANKER_session1$trial_type <- as.factor(pid_FLANKER_session1$trial_type)
+  levels(pid_FLANKER_session1$correct_button)[levels(pid_FLANKER_session1$correct_button)=="correct"] <- "Correct"
+  levels(pid_FLANKER_session1$correct_button)[levels(pid_FLANKER_session1$correct_button)=="incorrect"] <- "Incorrect"
+  levels(pid_FLANKER_session1$correct_button)[levels(pid_FLANKER_session1$correct_button)=="no_response"] <- "No Response"
+  levels(pid_FLANKER_session1$trial_type)[levels(pid_FLANKER_session1$trial_type)=="CONGRUENT"] <- "Congruent"
+  levels(pid_FLANKER_session1$trial_type)[levels(pid_FLANKER_session1$trial_type)=="INCONGRUENT"] <- "Incongruent"
+  names(pid_FLANKER_session1)[names(pid_FLANKER_session1)=="correct_button"]  <- "Button"
+  names(pid_FLANKER_session1)[names(pid_FLANKER_session1)=="condition"]  <- "Condition"
+  pid_FLANKER_session1$session <- 1
+  pid_FLANKER_session1$session <- as.factor(pid_FLANKER_session1$session)
+  
+  # Session 2 dataframe
+  pid_FLANKER_session2 = subset(FLANKER, pid == p_id_session2)
+  pid_FLANKER_session2$correct_button <- as.factor(pid_FLANKER_session2$correct_button)
+  pid_FLANKER_session2$trial_type <- as.factor(pid_FLANKER_session2$trial_type)
+  levels(pid_FLANKER_session2$correct_button)[levels(pid_FLANKER_session2$correct_button)=="correct"] <- "Correct"
+  levels(pid_FLANKER_session2$correct_button)[levels(pid_FLANKER_session2$correct_button)=="incorrect"] <- "Incorrect"
+  levels(pid_FLANKER_session2$correct_button)[levels(pid_FLANKER_session2$correct_button)=="no_response"] <- "No Response"
+  levels(pid_FLANKER_session2$trial_type)[levels(pid_FLANKER_session2$trial_type)=="CONGRUENT"] <- "Congruent"
+  levels(pid_FLANKER_session2$trial_type)[levels(pid_FLANKER_session2$trial_type)=="INCONGRUENT"] <- "Incongruent"
+  names(pid_FLANKER_session2)[names(pid_FLANKER_session2)=="correct_button"]  <- "Button"
+  names(pid_FLANKER_session2)[names(pid_FLANKER_session2)=="condition"]  <- "Condition"
+  pid_FLANKER_session2$session <- 2
+  pid_FLANKER_session2$session <- as.factor(pid_FLANKER_session2$session)
+  
+  dframe = rbind(pid_FLANKER_session1, pid_FLANKER_session2)
+  dframe <- subset(dframe, trial_type = trial)
+  dframe <- subset(dframe, Button != 'No Response')
+  
+  savename = paste("~/Documents/CMI/bks_ace_analysis/results/FLANKER_", p_id, "_", trial, ".pdf", sep="")
+  
+  pdf(savename)
+  print(ggplot(dframe, aes(x=factor(Button), fill=factor(session), y=dframe$rt)) +
+          
+          scale_y_continuous(limits = c(0,700)) +
+          stat_summary(fun.data=mean_sdl, width=0.5, fun.args = list(mult=1),
+                       geom="errorbar", position=position_dodge(width=1), color="grey70") +
+          stat_summary(fun.y=mean, geom="point", position=position_dodge(width=1), size=2.7, alpha = 0.8, aes(color=session)) +
+          geom_point(aes(group=factor(session), colour = factor(session), x=Button, y=dframe$rt),
+                     position= position_dodge(width=1), alpha= 0.4, size=1.2) +
+          
+          theme_classic()+
+          theme(axis.title.x = element_text(face="bold", size=16),
+                axis.title.y = element_text(face="bold", size=16),
+                axis.text.x  = element_text(size=16, angle=65, vjust=0.6),
+                axis.text.y  = element_text(size=16),
+                plot.title   = element_text(vjust=2, hjust=0.5, face="bold", size=20),
+                legend.title = element_text(size=16, face="bold"))+
+          labs(title=paste("BKS Training Results for FLANKER ", trial, sep=""),
+               x="Button Press Condition",
+               y="Response Time") +
+          scale_color_discrete(name="Session")+
+          scale_fill_discrete(name="", guide='none'))
+  
+  dev.off()
+    
+}
+
+# p_id of {001, 002, 004, 010, 012, 013}
+FLANKER_RT('001', 'Congruent')
 
 
 
